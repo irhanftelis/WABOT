@@ -1,7 +1,7 @@
 /* If You Copy, Don`t Delete This Credit!!! 
   Don`t Sell This Script Or I Take Immediately 
   Yang Jual Script Ini Report/Hangusin Aja Akunnya Atau Pukulin ae orangnya
-  Fix Doesn't Not Show QrCode & Multi Auth State
+  Fix Doesn't Show QrCode & Multi Auth State
   Regards from YanXiao ♡
 */
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
@@ -29,7 +29,6 @@ import chalk from 'chalk'
 import { tmpdir } from 'os'
 import { format } from 'util'
 import pino from 'pino'
-import { Boom } from '@hapi/boom'
 import {
     useMultiFileAuthState,
     DisconnectReason,
@@ -39,6 +38,7 @@ import { Low, JSONFile } from 'lowdb'
 
 import { makeWASocket, protoType, serialize } from './lib/simple.js'
 import storeSys from './lib/store2.js'
+const store = storeSys.makeInMemoryStore()
 import {
     mongoDB,
     mongoDBV2
@@ -107,6 +107,8 @@ const connectionOptions = {
         printQRInTerminal: true,
         auth: state,
         browser: ['Elaina(イレイナ)', 'Safari', '3.1.0'], 
+getMessage: async (key) => (store.loadMessage(key.remoteJid, key.id) || store.loadMessage(key.id) || {}).message,
+// get message diatas untuk mengatasi pesan gagal dikirim, "menunggu pesan", dapat dicoba lagi
 	      patchMessageBeforeSending: (message) => {
                 const requiresPatch = !!(
                     message.buttonsMessage 

@@ -1,32 +1,42 @@
-import { Configuration, OpenAIApi } from "openai"
-var handler = async (m, { conn, usedPrefix, command, text }) => {
-try {
-            if (!text) return reply(`Chat dengan AI.\n\nContoh:\n${usedPrefix}${command} Halo? `);
-            const configuration = new Configuration({
-              apiKey: 'Your Key', // Create Your Key
-            });                  // https://platform.openai.com/account/api-keys
-            const openai = new OpenAIApi(configuration);
+// Informasi, setiap akun ChatGPT/Openai, memiliki jumlah permintaan sebanyak $5.00 jika hoki dapat 18.00 tergantung akun, setiap 1 permintaan $ 0.00008. Kalian bisa cek disini https://platform.openai.com/account/usage
 
-            const response = await openai.createCompletion({
-              model: "text-davinci-003",
-              prompt: text,
-              temperature: 0, // Higher values means the model will take more risks.
-              max_tokens: 2048, // The maximum number of tokens to generate in the completion. Most models have a context length of 2048 tokens (except for the newest models, which support 4096).
-              top_p: 1, // alternative to sampling with temperature, called nucleus sampling
-              frequency_penalty: 0.3, // Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.
-              presence_penalty: 0 // Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.
-          });
-            m.reply(`${response.data.choices[0].text}`);
-          } catch (error) {
-          if (error.response) {
-            console.log(error.response.status);
-            console.log(error.response.data);
-            console.log(`${error.response.status}\n\n${error.response.data}`);
-          } else {
-            console.log(error);
-            m.reply("error :"+ error.message);
-          }
-        }
+import fetch from "node-fetch";
+import { generateWAMessageFromContent } from "@adiwajshing/baileys";
+import fs from 'fs';
+import { Configuration, OpenAIApi } from 'openai';
+
+const configuration = new Configuration({ organization: 'KEY-ORG-KAMU', apiKey: 'KEY-OPENAI-APIKEY-KAMU' }); //KEY-OPENAI-APIKEY-KAMU = https://platform.openai.com/account/api-keys , KEY-ORG-KAMU = https://platform.openai.com/account/org-settings
+const openai = new OpenAIApi(configuration);
+
+let handler = async (m, { conn, usedPrefix, command, text }) => {
+  try {
+    if (!text) throw new Error(`Chat dengan AI.\n\nContoh:\n${usedPrefix}${command} Halo?`);
+
+    const response = await openai.createChatCompletion({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: text }],
+    });
+
+    conn.reply(m.chat, `${response.data.choices[0].message.content}`, m);
+
+  } catch (error) {
+    console.log(error);
+    if (error.response) {
+      console.log(error.response.status);
+      console.log(error.response.data);
+      conn.reply(m.chat, `${error.response.status}\n\n${error.response.data}`, m);
+    } else {
+      conn.reply(m.chat, `${error.message}`, m);
+    }
+  }
 }
-handler.command = /^(ai|openai)$/i
-export default handler
+
+handler.command = /^(ai|openai|chatgpt)$/i;
+handler.help = ["ai", "openai", "chatgpt"].map(v => v + " <teks>");
+handler.tags = ["internet"];
+handler.fail = null;
+
+handler.limit = true;
+handler.exp = 0;
+
+export default handler;

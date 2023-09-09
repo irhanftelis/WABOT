@@ -37,8 +37,7 @@ import {
 import { Low, JSONFile } from 'lowdb'
 
 import { makeWASocket, protoType, serialize } from './lib/simple.js'
-import storeSys from './lib/store2.js'
-const store = storeSys.makeInMemoryStore()
+
 import {
     mongoDB,
     mongoDBV2
@@ -93,22 +92,20 @@ global.loadDatabase = async function loadDatabase() {
 }
 loadDatabase()
 
-global.authFolder = storeSys.fixFileName(`${opts._[0] || ''}sessions`)
     let { state, saveCreds } = await useMultiFileAuthState(path.resolve('./sessions'))
     let { version, isLatest } = await fetchLatestBaileysVersion()
     console.log(`using WA v${version.join('.')}, isLatest: ${isLatest}`)
-/*const store = storeSys.makeInMemoryStore()
-const sess = `${opts._[0] || 'elaina'}.store.json`
-store.readFromFile(sess)
-global.store = store*/
 
 const connectionOptions = {
 	    version,
         printQRInTerminal: true,
         auth: state,
         browser: ['Elaina(イレイナ)', 'Safari', '3.1.0'], 
-getMessage: async (key) => (store.loadMessage(key.remoteJid, key.id) || store.loadMessage(key.id) || {}).message,
-// get message diatas untuk mengatasi pesan gagal dikirim, "menunggu pesan", dapat dicoba lagi
+	getMessage: async key => {
+    		const messageData = await store.loadMessage(key.remoteJid, key.id);
+    		return messageData?.message || undefined;
+	},
+	// get message diatas untuk mengatasi pesan gagal dikirim, "menunggu pesan", dapat dicoba lagi
 	      patchMessageBeforeSending: (message) => {
                 const requiresPatch = !!(
                     message.buttonsMessage 
